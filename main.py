@@ -1,98 +1,114 @@
-from tkinter import *
-from random import randint
-root = Tk()
-root.title("Number Guessing Game GUI")
-root.geometry('600x600')
+import tkinter as tk
+from levels import level_packs  # Import level_packs from the levels module
 
-global health 
-health = 10
+root = tk.Tk()
+root.title("Quranic Quest")
+root.configure(bg="black")  # Set the background color to black
 
-def age_function():
-    age_label = Label(root, text="Hi, "+name.get()+" What's your age?")
-    age_label.pack()
-    global age
-    age = Entry(root)
-    age.pack()
-    age_submit_button = Button(root, text="Submit", command=game_start_0_function)
-    age_submit_button.pack()
+# Get the screen width and height
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
 
-def game_start_0_function():
-    age_integer = int(age.get())
-    if age_integer >= 18:
-        welcome_label = Label(root, text="You are eligible to play the game")
-        welcome_label.pack()
-        play_game_button = Button(root, text="Play", command=game_start_1_function)
-        play_game_button.pack()
-        
+# Set the window size to match the screen size
+root.geometry(f"{screen_width}x{screen_height}")
+
+welcome_label = tk.Label(root, text="", font=("Helvetica", 20), fg="white", bg="black")
+story_text = tk.Label(root, text="Explore the wisdom of the Quran!", font=("Helvetica", 16), fg="white", bg="black")
+score_label = tk.Label(root, text="Score: 0", font=("Helvetica", 14), fg="white", bg="black")
+
+choice_buttons = []
+current_level = None
+current_level_pack = None
+player_score = 0  # Initialize player score
+
+# Menu to select level pack
+menu = tk.Menu(root)
+root.config(menu=menu)
+
+level_packs_menu = tk.Menu(menu, tearoff=0)
+menu.add_cascade(label="Choose Level Pack", menu=level_packs_menu)
+
+def update_story(new_text):
+    story_text.config(text=new_text)
+    # Hide choice buttons if the level pack is completed
+    if current_level + 1 == len(current_level_pack):
+        hide_choices()
+
+def update_choices(choices):
+    for button in choice_buttons:
+        button.destroy()
+
+    for i, choice_text in enumerate(choices, start=1):
+        button = tk.Button(root, text=choice_text, command=lambda i=i: make_choice(i), font=("Helvetica", 14), fg="white", bg="black")
+        choice_buttons.append(button)
+        button.pack(pady=5)
+
+def hide_choices():
+    for button in choice_buttons:
+        button.pack_forget()
+
+def load_level_pack(pack_name):
+    global current_level_pack
+    if pack_name in level_packs:
+        current_level_pack = level_packs[pack_name]
+        load_level(0)  # Start with the first level in the pack
     else:
-        cant_play_label = Label(root, text="Sorry you have to wait till you turn 18")
-        cant_play_label.pack()
+        print(f"Level pack '{pack_name}' not found.")
 
-def game_start_1_function():
-    game_line_1 = Label(root, text="Road is dividing into left and right")
-    game_line_1.pack()
-    game_line_2 = Label(root, text="Which path you will chose?")
-    game_line_2.pack()
-    game_line_3 = Label(root, text="left")
-    game_line_3.pack()
-    game_line_4 = Label(root, text="right")
-    game_line_4.pack()
-    global user_decision_1
-    user_decision_1 = Entry(root)
-    user_decision_1.pack()
-    decision_1_submit_button = Button(root, text="Submit", command=game_start_2_function)
-    decision_1_submit_button.pack()
+def load_level(level_index):
+    global current_level_pack
+    if 0 <= level_index < len(current_level_pack):
+        global current_level
+        current_level = level_index
+        level_data = current_level_pack[level_index]
+        update_story(level_data["story"])
+        update_choices(level_data["choices"])
+    else:
+        print(f"Level index '{level_index}' out of range.")
 
+def make_choice(choice_number):
+    if current_level is not None:
+        level_data = current_level_pack[current_level]
+        user_answer = chr(ord('a') + choice_number - 1)
 
+        correct_answer = level_data.get("correct_answer", None)
 
-def game_start_2_function():
-    if user_decision_1.get() == "left":
-        game_line_5 = Label(root, text="Now there is a house and a strange pond , So what will you chose? house or pond")
-        game_line_5.pack()
-        global user_decision_1_2
-        user_decision_1_2 = Entry(root)
-        user_decision_1_2.pack()
-        user_decision_1_2_submit = Button(root, text="Submit", command=game_start_3_function)
-        user_decision_1_2_submit.pack()
+        if correct_answer is not None and user_answer.lower() == correct_answer:
+            update_story(f"Correct! Well done. Your score: {update_score(1)}")
+        elif correct_answer is None:
+            update_story(f"Correct! Well done. Your score: {update_score(1)}")
+        else:
+            update_story(f"Wrong! The correct answer is: {correct_answer.upper()}. Your score: {update_score(0)}")
 
+        # Move to the next level or show congratulations if all levels are completed
+        if current_level + 1 < len(current_level_pack):
+            load_level(current_level + 1)
+        else:
+            show_congratulations()
 
-def game_start_3_function():
-    if user_decision_1_2.get() == "house":
-        game_line_6 = Label(root, text="you had a fight with them and you lose your health. Write health to find out your new health")
-        game_line_6.pack()
-        global new_health
-        new_health = health - 5
-        global find_out_health
-        find_out_health = Entry(root)
-        find_out_health.pack()
-        find_out_health_submit = Button(root, text="Submit", command=game_start_4_function)
-        find_out_health_submit.pack()
+def update_score(increment):
+    global player_score
+    player_score += increment
+    score_label.config(text=f"Score: {player_score}", fg="white", bg="black")  # Update score on the screen
+    return player_score
 
-    elif user_decision_1_2.get() == "pond":
-        game_line_7 = Label(root, text="you have a happy life now. you live by fishing Write thankyou to me for saving you")
-        game_line_7.pack()
-        global thnx
-        thnx = Entry(root)
-        thnx.pack()
-        thnx_submit=Button(root, text="Submit",command=game_start_5_function)
-        thnx_submit.pack()
+def show_congratulations():
+    update_story("Congratulations! You've completed the level pack!")
+    # You can add more actions or go back to the level pack selection menu
 
+def select_level_pack(pack_name):
+    load_level_pack(pack_name)
 
-def game_start_4_function():
-    if find_out_health.get() == "health":
-        find_out_health_label = Label(root, text=new_health)
-        find_out_health_label.pack()
+# Add level packs to the menu dynamically
+for pack_name in level_packs:
+    level_packs_menu.add_command(label=pack_name, command=lambda pack_name=pack_name: select_level_pack(pack_name))
 
-def game_start_5_function():
-    if thnx.get() == "thankyou":
-        thnx_label_1 = Label(root, text="your welcome")
-        thnx_label_1.pack()
+# Welcome message label
+welcome_message = "Welcome to Quranic Quest!"
+welcome_label.config(text=welcome_message)
+welcome_label.pack(pady=10)
 
-name_label = Label(root, text="Enter your Name")
-name_label.pack()
-name = Entry(root)
-name.pack()
-name_submit_button = Button(root, text="Submit", command=age_function)
-name_submit_button.pack()
+story_text.pack(pady=20)
+score_label.pack()
 
 root.mainloop()
